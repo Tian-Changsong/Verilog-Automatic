@@ -1,0 +1,5 @@
+[
+    { "keys": ["shift+f6"], "command": "auto_def" },
+    { "keys": ["shift+f7"], "command": "auto_port" },
+    { "keys": ["shift+f8"], "command": "auto_inst" }
+]
