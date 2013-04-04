@@ -205,7 +205,7 @@ class AutoInstCommand(sublime_plugin.TextCommand):
 			output_bitwidth_list=self.get_list(output_pattern,module_file_handle,1,module_to_find)			
 			inout_name_list=self.get_list(inout_pattern,module_file_handle,2,module_to_find)
 			inout_bitwidth_list=self.get_list(inout_pattern,module_file_handle,1,module_to_find)
-			insert_region=find_insert_region(self, insert_pattern, insert_mark,0)
+			insert_region=find_insert_region(self, insert_pattern, insert_mark,region.begin())
 			insert_point=insert_region.begin()
 			self.view.erase(edit,insert_region)
 
