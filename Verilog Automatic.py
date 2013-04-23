@@ -232,7 +232,7 @@ class AddHeaderCommand(sublime_plugin.TextCommand):
 		file_name=self.view.file_name()
 		check_file_ext(file_name)
 		file_name_without_path=os.path.split(file_name)[1]
-		plugin_settings=sublime.load_settings("VerilogAutomatic.sublime-settings")
+		plugin_settings=sublime.load_settings("Verilog Automatic.sublime-settings")
 		author=plugin_settings.get("Author")
 		company=plugin_settings.get("Company")
 		email=plugin_settings.get("Email")
