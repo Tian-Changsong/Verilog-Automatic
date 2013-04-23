@@ -52,7 +52,7 @@ Example:
 *******************
 Automatically generate module instances after the "/*autoinst*/" mark (need ctags).
 
-* NOTE:Need to place the cursor in the module name, multiple-cursor supported.
+* NOTE:Need to place the cursor on the module name, multiple-cursor supported to generate multiple instances.
 
 Example:
 
@@ -60,7 +60,7 @@ Example:
         test test_instance(/*autoinst*/);
 
 #### after:
-* place the cursor in the module name "test"
+* place the cursor on the module name "test"
 
         test test_instance(/*autoinst*/
                 .e(e),
