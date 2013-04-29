@@ -1,7 +1,7 @@
 Verilog Automatic
 ====================
 This plugin can automatically add ports to the current editing file, generate module instances (need ctags),add instance connections ,add file header for verilog code.
-I borrowed the idea from automatic.vim which is the an alike plugin for VIM, just rewrote one for sublime text2.
+I borrowed the idea from automatic.vim which is a similar plugin for VIM, I just rewrote one for sublime text2.
 
 # Features
 ***********
