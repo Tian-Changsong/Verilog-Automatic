@@ -12,13 +12,18 @@ def get_match(pattern, string, group_number):
     return match.group(group_number)
 
 
-def get_list(text_command, pattern, group_number):
+def get_list(text_command, pattern, group_number, split_flag):
     match_list = []
     regions = text_command.view.find_all(pattern)
     for region in regions:
         line_string = text_command.view.substr(region)
         match_substring = get_match(pattern, line_string, group_number)
-        match_list.append(match_substring)
+        if split_flag:
+            port_list = match_substring.split(',')
+            for each_port in port_list:
+                match_list.append(each_port.strip())
+        else:
+            match_list.append(match_substring.strip())
     return match_list
 
 
@@ -49,12 +54,12 @@ class AutoDefCommand(sublime_plugin.TextCommand):
         insert_mark = "/*autodef*/"
         insert_region = find_insert_region(self, insert_pattern, insert_mark, 0)
         insert_point = insert_region.end()
-        search_defined_pattern = r'^\s*(?:\b(?:input|wire|reg)\b)\s*(?:\[\S+\s*:\s*\S+\])*\s*(\w+)'
+        search_defined_pattern = r'^\s*(?:\b(?:input|wire|reg)\b)\s*(?:\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
         search_instance_pattern = r'^\s*(?:[.]\w+\s*\(\s*)(\w+)\s*(\[\s*\w+\s*[:]\s*\w+\s*\])*\)'
-        instance_port_name_list = get_list(self, search_instance_pattern, 1)
-        instance_port_bitwidth_list = get_list(self, search_instance_pattern, 2)
+        instance_port_name_list = get_list(self, search_instance_pattern, 1, 0)
+        instance_port_bitwidth_list = get_list(self, search_instance_pattern, 2, 0)
         list_length = len(instance_port_name_list)
-        defined_list = get_list(self, search_defined_pattern, 1)
+        defined_list = get_list(self, search_defined_pattern, 1, 1)
         for i in range(list_length):
             if instance_port_name_list[i] in defined_list:
                 continue
@@ -90,17 +95,17 @@ class AutoPortCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
         check_file_ext(file_name)
-        input_pattern = r'^\s*(?:\binput\b)\s*(\[\S+\s*:\s*\S+\])*\s*(\w+)'
-        output_pattern = r'^\s*(?:\boutput\b)\s*(\[\S+\s*:\s*\S+\])*\s*(\w+)'
-        inout_pattern = r'^\s*(?:\binout\b)\s*(\[\S+\s*:\s*\S+\])*\s*(\w+)'
+        input_pattern = r'^\s*(?:\binput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        output_pattern = r'^\s*(?:\boutput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        inout_pattern = r'^\s*(?:\binout\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
         insert_pattern = r"((?<=/\*\bautoport\b\*/)[\d\D]*?(?=\);))"
         insert_mark = r"/*autoport*/"
         insert_region = find_insert_region(self, insert_pattern, insert_mark, 0)
         insert_point = insert_region.begin()
         self.view.erase(edit, insert_region)
-        input_list = get_list(self, input_pattern, 2)
-        output_list = get_list(self, output_pattern, 2)
-        inout_list = get_list(self, inout_pattern, 2)
+        input_list = get_list(self, input_pattern, 2, 1)
+        output_list = get_list(self, output_pattern, 2, 1)
+        inout_list = get_list(self, inout_pattern, 2, 1)
         if len(input_list) > 0:
             self.insert_list(edit, input_list, insert_point)
             self.view.insert(edit, insert_point, "\n//input")
@@ -171,8 +176,9 @@ class AutoInstCommand(sublime_plugin.TextCommand):
             sublime.status_message("Can not find any tag file ! Please generate the tag file using Ctags !")
             raise Exception('Can not find any tag file ! Please generate the tag file using Ctags !')
 
-    def get_list(self, pattern, file_handle, group_number, module_name):
-        match_list = []
+    def get_list(self, pattern, file_handle, module_name):
+        bitwidth_list = []
+        port_list = []
         scope_valid = 0
         compiled_pattern = re.compile(pattern)
         file_handle.seek(0)
@@ -188,8 +194,14 @@ class AutoInstCommand(sublime_plugin.TextCommand):
                 scope_valid = 0
                 break
             if match and scope_valid:
-                match_list.append(match.group(group_number))
-        return match_list
+                bitwidth_match = match.group(1)
+                port_name_match = match.group(2)
+                if port_name_match is not None:
+                    port_line_list = port_name_match.split(',')
+                    for each_port in port_line_list:
+                        port_list.append(each_port.strip())
+                        bitwidth_list.append(bitwidth_match)
+        return (bitwidth_list, port_list)
 
     def insert_list(self, edit, name_list_to_insert, bitwidth_list_to_insert, insert_point):
         range_list = range(len(name_list_to_insert))
@@ -215,17 +227,14 @@ class AutoInstCommand(sublime_plugin.TextCommand):
             tag_file = self.find_tag(file_name)
             tag_handle = open(tag_file)
             module_file_handle = self.get_module_file_handle(module_to_find, tag_handle, tag_file)
-            input_pattern = r'^\s*(?:\binput\b)\s*(\[\S+\s*:\s*\S+\])*\s*(\w+)'
-            output_pattern = r'^\s*(?:\boutput\b)\s*(\[\S+\s*:\s*\S+\])*\s*(\w+)'
-            inout_pattern = r'^\s*(?:\binout\b)\s*(\[\S+\s*:\s*\S+\])*\s*(\w+)'
+            input_pattern = r'^\s*(?:\binput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+            output_pattern = r'^\s*(?:\boutput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+            inout_pattern = r'^\s*(?:\binout\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
             insert_pattern = r"((?<=/\*\bautoinst\b\*/)[\d\D]*?(?=\);))"
             insert_mark = r"/*autoinst*/"
-            input_name_list = self.get_list(input_pattern, module_file_handle, 2, module_to_find)
-            input_bitwidth_list = self.get_list(input_pattern, module_file_handle, 1, module_to_find)
-            output_name_list = self.get_list(output_pattern, module_file_handle, 2, module_to_find)
-            output_bitwidth_list = self.get_list(output_pattern, module_file_handle, 1, module_to_find)
-            inout_name_list = self.get_list(inout_pattern, module_file_handle, 2, module_to_find)
-            inout_bitwidth_list = self.get_list(inout_pattern, module_file_handle, 1, module_to_find)
+            input_bitwidth_list, input_name_list = self.get_list(input_pattern, module_file_handle, module_to_find)
+            output_bitwidth_list, output_name_list = self.get_list(output_pattern, module_file_handle, module_to_find)
+            inout_bitwidth_list, inout_name_list = self.get_list(inout_pattern, module_file_handle, module_to_find)
             insert_region = find_insert_region(self, insert_pattern, insert_mark, region.begin())
             insert_point = insert_region.begin()
             self.view.erase(edit, insert_region)
