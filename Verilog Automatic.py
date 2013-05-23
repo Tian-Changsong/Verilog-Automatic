@@ -23,7 +23,10 @@ def get_list(text_command, pattern, group_number, split_flag):
             for each_port in port_list:
                 match_list.append(each_port.strip())
         else:
-            match_list.append(match_substring.strip())
+            if match_substring is not None:
+                match_list.append(match_substring.strip())
+            else:
+                match_list.append(match_substring)
     return match_list
 
 
