@@ -2,7 +2,10 @@ import sublime
 import sublime_plugin
 import re
 import os
-import ctagsplugin
+try:
+    import ctagsplugin
+except:
+    print "No Ctags found !!"
 import time
 
 
