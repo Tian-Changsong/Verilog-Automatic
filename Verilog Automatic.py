@@ -2,12 +2,24 @@ import sublime
 import sublime_plugin
 import re
 import os
-try:
-    import ctagsplugin
-except:
-    print "No Ctags found !!"
 import time
+from os.path import join, normpath, dirname
 
+sublime_version = 2
+if int(sublime.version()) > 3000:
+    sublime_version = 3
+
+def find_tags_relative_to(file_name):
+    if not file_name: return None
+
+    dirs = dirname(normpath(file_name)).split(os.path.sep)
+
+    while dirs:
+        joined = os.path.sep.join(dirs + ['.tags'])
+        if os.path.exists(joined) and not os.path.isdir(joined): return joined
+        else: dirs.pop()
+
+    return None
 
 def get_match(pattern, string, group_number):
     compiled_pattern = re.compile(pattern)
@@ -35,7 +47,7 @@ def get_list(text_command, pattern, group_number, split_flag):
 
 def find_insert_region(text_command, insert_pattern, insert_mark, search_start):
     insert_region = text_command.view.find(insert_pattern, search_start)
-    if insert_region is None:
+    if (insert_region is None and sublime_version == 2) or (insert_region.begin() == -1 and sublime_version == 3):
         sublime.status_message('Can not find the "'+insert_mark+'" mark !')
         raise Exception('Can not find the "'+insert_mark+'" mark !')
     return insert_region
@@ -59,6 +71,7 @@ class AutoDefCommand(sublime_plugin.TextCommand):
         insert_pattern = r"/\*\bautodef\b\*/"
         insert_mark = "/*autodef*/"
         insert_region = find_insert_region(self, insert_pattern, insert_mark, 0)
+        print(type(insert_region))
         insert_point = insert_region.end()
         search_defined_pattern = r'^\s*(?:\b(?:input|wire|reg)\b)\s*(?:\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
         search_instance_pattern = r'^\s*(?:[.]\w+\s*\(\s*)(\w+)\s*(\[\s*\w+\s*[:]\s*\w+\s*\])*\)'
@@ -88,7 +101,7 @@ class AutoPortCommand(sublime_plugin.TextCommand):
     """auto add module port to the current verilog module"""
 
     def insert_list(self, edit, list_to_insert, insert_point):
-        range_list = range(len(list_to_insert))
+        range_list = list(range(len(list_to_insert)))
         range_list.reverse()
         for i in range_list:
             self.view.insert(edit, insert_point, list_to_insert[i])
@@ -175,7 +188,7 @@ class AutoInstCommand(sublime_plugin.TextCommand):
     # def find_module_in_tag(self):
 
     def find_tag(self, file_name):
-        tag_file = ctagsplugin.find_tags_relative_to(file_name)
+        tag_file = find_tags_relative_to(file_name)
         if tag_file:
             return tag_file
         else:
@@ -210,7 +223,7 @@ class AutoInstCommand(sublime_plugin.TextCommand):
         return (bitwidth_list, port_list)
 
     def insert_list(self, edit, name_list_to_insert, bitwidth_list_to_insert, insert_point):
-        range_list = range(len(name_list_to_insert))
+        range_list = list(range(len(name_list_to_insert)))
         range_list.reverse()
         for i in range_list:
             if bitwidth_list_to_insert[i] is not None:
