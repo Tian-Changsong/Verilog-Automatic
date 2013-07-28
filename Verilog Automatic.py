@@ -352,7 +352,7 @@ class ChangeModifyTimeCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         modify_time_pattern = r"(?<=^//  Last Modified : )[\d\D]*?$"
         insert_region = self.view.find(modify_time_pattern, 0)
-        if insert_region is None:
+        if (insert_region is None and sublime_version == 2) or (insert_region.begin() == -1 and sublime_version == 3):
             return
         else:
             insert_point = insert_region.begin()
