@@ -336,7 +336,7 @@ class AddHeaderCommand(sublime_plugin.TextCommand):
         if author:
             self.view.insert(edit, 0, "\n//  Author" + " " * 8 + ": " + author)
         self.view.insert(edit, 0, "\n//  Revision" + " " * 6 + ": ")
-        self.view.insert(edit, 0, "\n//  Last Modified : ")
+        self.view.insert(edit, 0, "\n//  Last Modified : " + current_time)
         self.view.insert(
             edit, 0, "\n//  Created On" + " " * 4 + ": " + current_time)
         self.view.insert(
@@ -364,5 +364,5 @@ class ChangeModifyTimeCommand(sublime_plugin.TextCommand):
 class LastModifyListener(sublime_plugin.EventListener):
 
     def on_pre_save(self, view):
-        if 'Verilog' in view.settings().get('syntax') and view.is_dirty():
+        if ('Verilog' in view.settings().get('syntax') or 'SystemVerilog' in view.settings().get('syntax')) and view.is_dirty():
             view.run_command("change_modify_time")
