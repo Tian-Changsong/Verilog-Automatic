@@ -20,9 +20,9 @@ Automatically add ports to the current editing file after the "/*autoport*/" mar
 
 * NOTE: NOT SUPPORTED STYLE:
     
-    input clk,output single_out,   //multiple input/output/inout keywords in the same line
-    input clk,rst,
-    chip_en;                       //multiple signals separated by comma written in different lines
+        input clk,output single_out,   //multiple input/output/inout keywords in the same line
+        input clk,rst,
+        chip_en;    //multiple signals separated by comma written in different lines
 
 * NOTE: Do not use this function when there are multiple modules in the same file.
 
