@@ -18,12 +18,13 @@ I borrowed the idea from automatic.vim which is a similar plugin for VIM, I just
 *******************
 Automatically add ports to the current editing file after the "/*autoport*/" mark.
 
-* NOTE:
-    ** NOT SUPPORTED STYLE:
-        input clk,output single_out,   //multiple input/output/inout keywords in the same line
-        input clk,rst,
-        chip_en;                       //multiple signals separated by comma written in different lines
-    ** Do not use this function when there are multiple modules in the same file.
+* NOTE: NOT SUPPORTED STYLE:
+    
+    input clk,output single_out,   //multiple input/output/inout keywords in the same line
+    input clk,rst,
+    chip_en;                       //multiple signals separated by comma written in different lines
+
+* NOTE: Do not use this function when there are multiple modules in the same file.
 
 Example:
 
