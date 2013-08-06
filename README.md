@@ -150,5 +150,5 @@ thus generates the file header like this:
 ## Change log
 
 #### 05/08/2013 
-Add verilog-2001 style port declaration support.
-Add comments support, single line commneted-out code will be ignored.
+    Add verilog-2001 style port declaration support.
+    Add comments support, single line commneted-out code will be ignored.
