@@ -82,7 +82,7 @@ class AutoDefCommand(sublime_plugin.TextCommand):
         insert_region = find_insert_region(
             self, insert_pattern, insert_mark, 0)
         insert_point = insert_region.end()
-        search_defined_pattern = r'^\s*(?:\b(?:input|wire|reg)\b)\s*(?:\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        search_defined_pattern = r'^\s*(?:\b(?:input|wire|reg|signed)\b)\s*(?:\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
         search_instance_pattern = r'^\s*(?:[.]\w+\s*\(\s*)(\w+)\s*(\[\s*\w+\s*[:]\s*\w+\s*\])*\)'
         instance_port_name_list = get_list(self, search_instance_pattern, 1, 0)
         instance_port_bitwidth_list = get_list(
@@ -127,9 +127,9 @@ class AutoPortCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
         check_file_ext(file_name)
-        input_pattern = r'^\s*(?:\binput\b)\s*(?:wire|reg)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
-        output_pattern = r'^\s*(?:\boutput\b)\s*(?:wire|reg)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
-        inout_pattern = r'^\s*(?:\binout\b)\s*(?:wire|reg)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        input_pattern = r'^\s*(?:\binput\b)\s*(?:wire|reg)*\s*(?:signed)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        output_pattern = r'^\s*(?:\boutput\b)\s*(?:wire|reg)*\s*(?:signed)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        inout_pattern = r'^\s*(?:\binout\b)\s*(?:wire|reg)*\s*(?:signed)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
         insert_pattern = r"((?<=/\*\bautoport\b\*/)[\d\D]*?(?=\);))"
         insert_mark = r"/*autoport*/"
         insert_region = find_insert_region(
@@ -288,9 +288,9 @@ class AutoInstCommand(sublime_plugin.TextCommand):
             tag_handle = open(tag_file)
             module_file_handle = self.get_module_file_handle(
                 module_to_find, tag_handle, tag_file)
-            input_pattern = r'(?:\binput\b\s*(?:reg|wire)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
-            output_pattern = r'(?:\boutput\b\s*(?:reg|wire)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
-            inout_pattern = r'(?:\binout\b\s*(?:reg|wire)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
+            input_pattern = r'(?:\binput\b\s*(?:reg|wire)*\s*(?:signed)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
+            output_pattern = r'(?:\boutput\b\s*(?:reg|wire)*\s*(?:signed)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
+            inout_pattern = r'(?:\binout\b\s*(?:reg|wire)*\s*(?:signed)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
             insert_pattern = r"((?<=/\*\bautoinst\b\*/)[\d\D]*?(?=\);))"
             insert_mark = r"/*autoinst*/"
             input_bitwidth_list, input_name_list = self.get_list(
