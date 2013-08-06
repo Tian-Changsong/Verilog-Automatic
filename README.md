@@ -1,7 +1,7 @@
 Verilog Automatic
 ====================
-This plugin can automatically add ports to the current editing file, generate module instances (need ctags),add instance connections ,add file header for verilog code.
-I borrowed the idea from automatic.vim which is a similar plugin for VIM, I just rewrote one for sublime text2 or sublime text3.
+This plugin can automatically add ports to the current editing file,  generate module instances (need ctags),add instance connections ,add file header for verilog code. Both verilog-1995 and verilog-2001 style are supported.
+I borrowed the idea from automatic.vim which is a similar plugin for VIM, I just rewrote one for sublime text2&3.
 
 # Features
 ***********
@@ -18,18 +18,34 @@ I borrowed the idea from automatic.vim which is a similar plugin for VIM, I just
 *******************
 Automatically add ports to the current editing file after the "/*autoport*/" mark.
 
+* NOTE:
+** NOT SUPPORTED STYLE:
+    input clk,output single_out,   //multiple input/output/inout keywords in the same line
+    input clk,rst,
+    chip_en;                       //multiple signals separated by comma written in different lines
+** Do not use this function when there are multiple modules in the same file.
+
 Example:
 
-#### before:
+#### Before
+
+    (verilog-1995 style):
 
     module test(/*autoport*/);
-        input a;
+        input [1:0]a;
         input b;
-        output c;
-        output d;
+        output [2:0]c,d;
         inout e;
 
-#### after:
+    (verilog-2001 style):
+
+    module test(/*autoport*/);
+        input wire[1:0]a;
+        input wire b;
+        output reg [2:0]c,d;
+        inout wire e;
+
+#### After:
 
     module test(/*autoport*/
     //inout
@@ -40,12 +56,6 @@ Example:
     //input
                 a,
                 b);
-        input a;
-        input b;
-        output c;
-        output d;
-        inout e;
-
 
 
 ## AutoInst:(shift+f7)
@@ -56,17 +66,17 @@ Automatically generate module instances after the "/*autoinst*/" mark (need ctag
 
 Example:
 
-#### before:
+#### Before:
         test test_instance(/*autoinst*/);
 
-#### after:
-* place the cursor on the module name "test"
+#### After:
+* Place the cursor on the module name "test"
 
         test test_instance(/*autoinst*/
                 .e(e),
                 .c(c),
-                .d(d),
-                .a(a),
+                .d(d[2:0]),
+                .a(a[1:0]),
                 .b(b));
 
 
@@ -82,24 +92,24 @@ Example:
 
 
 
-    test test_instance(/*autoinst*/
+        test test_instance(/*autoinst*/
                 .e(e),
                 .c(c),
-                .d(d),
-                .a(a),
+                .d(d[2:0]),
+                .a(a[1:0]),
                 .b(b));
 #### after:
 
     /*autodef*/
-    wire d;
     wire e;
-    wire b;
+    wire [2:0]d;
     wire c;
-    wire a;
-    //assign d=
+    wire b;
+    wire [1:0]a;
     //assign e=
-    //assign b=
+    //assign d=
     //assign c=
+    //assign b=
     //assign a=
 
 
@@ -107,14 +117,14 @@ Example:
     test test_instance(/*autoinst*/
                 .e(e),
                 .c(c),
-                .d(d),
-                .a(a),
+                .d(d[2:0]),
+                .a(a[1:0]),
                 .b(b));
 
 
 ## AddFileHeader:(shift+f9)
 ************************
-add your personal information in the setting file(the user's setting file is better),like below or leave any of them empty:
+Add your personal information in the setting file(the user's setting file is better),like below or leave any of them empty:
 
         {
             "Author":"Mike",
@@ -136,3 +146,9 @@ thus generates the file header like this:
         //
         //
         //==================================================================================================
+
+## Change log
+
+#### 05/08/2013 
+Add verilog-2001 style port declaration support.
+Add comments support, single line commneted-out code will be ignored.

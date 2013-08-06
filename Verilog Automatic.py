@@ -28,7 +28,7 @@ def find_tags_relative_to(file_name):
 
 def get_match(pattern, string, group_number):
     compiled_pattern = re.compile(pattern)
-    match = re.match(compiled_pattern, string)
+    match = re.search(compiled_pattern, string)
     return match.group(group_number)
 
 
@@ -36,6 +36,8 @@ def get_list(text_command, pattern, group_number, split_flag):
     match_list = []
     regions = text_command.view.find_all(pattern)
     for region in regions:
+        if 'comment' in text_command.view.scope_name(region.begin()):
+            continue
         line_string = text_command.view.substr(region)
         match_substring = get_match(pattern, line_string, group_number)
         if split_flag:
@@ -79,7 +81,6 @@ class AutoDefCommand(sublime_plugin.TextCommand):
         insert_mark = "/*autodef*/"
         insert_region = find_insert_region(
             self, insert_pattern, insert_mark, 0)
-        print(type(insert_region))
         insert_point = insert_region.end()
         search_defined_pattern = r'^\s*(?:\b(?:input|wire|reg)\b)\s*(?:\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
         search_instance_pattern = r'^\s*(?:[.]\w+\s*\(\s*)(\w+)\s*(\[\s*\w+\s*[:]\s*\w+\s*\])*\)'
@@ -126,9 +127,9 @@ class AutoPortCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         file_name = self.view.file_name()
         check_file_ext(file_name)
-        input_pattern = r'^\s*(?:\binput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
-        output_pattern = r'^\s*(?:\boutput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
-        inout_pattern = r'^\s*(?:\binout\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        input_pattern = r'^\s*(?:\binput\b)\s*(?:wire|reg)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        output_pattern = r'^\s*(?:\boutput\b)\s*(?:wire|reg)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+        inout_pattern = r'^\s*(?:\binout\b)\s*(?:wire|reg)*\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
         insert_pattern = r"((?<=/\*\bautoport\b\*/)[\d\D]*?(?=\);))"
         insert_mark = r"/*autoport*/"
         insert_region = find_insert_region(
@@ -207,7 +208,6 @@ class AutoInstCommand(sublime_plugin.TextCommand):
                 "Invalid module name '" + module_name + "' selected !")
         else:
             return module_name
-    # def find_module_in_tag(self):
 
     def find_tag(self, file_name):
         tag_file = find_tags_relative_to(file_name)
@@ -219,30 +219,43 @@ class AutoInstCommand(sublime_plugin.TextCommand):
             raise Exception(
                 'Can not find any tag file ! Please generate the tag file using Ctags !')
 
+    def check_if_commented(self, line, check_word):
+        if '//' in line:
+            if line.index('//') < line.index(check_word):
+                return 1
+        return 0
+
     def get_list(self, pattern, file_handle, module_name):
         bitwidth_list = []
         port_list = []
         scope_valid = 0
         compiled_pattern = re.compile(pattern)
         file_handle.seek(0)
-        module_scope_start_compiled_pattern = re.compile(
-            r"^\s*\bmodule\b\s*\b" + module_name + r"\b")
-        module_scope_end_compiled_pattern = re.compile(r"^\s*\bendmodule\b")
+        module_scope_start_pattern = r"\bmodule\b\s*\b" + module_name + r"\b"
+        module_scope_end_pattern = r"\s*\bendmodule\b"
+
         for line in file_handle:
-            module_scope_begin_match = re.match(
-                module_scope_start_compiled_pattern, line)
-            module_scope_end_match = re.match(
-                module_scope_end_compiled_pattern, line)
-            match = re.match(compiled_pattern, line)
+            module_scope_begin_match = re.search(
+                module_scope_start_pattern, line)
+            module_scope_end_match = re.search(
+                module_scope_end_pattern, line)
+
             if module_scope_begin_match:
+                if self.check_if_commented(line, 'module'):
+                    continue
                 scope_valid = 1
             elif module_scope_end_match and scope_valid:
+                if self.check_if_commented(line, 'endmodule'):
+                    continue
                 scope_valid = 0
                 break
-            if match and scope_valid:
-                bitwidth_match = match.group(1)
-                port_name_match = match.group(2)
-                if port_name_match is not None:
+            if scope_valid:
+                match = re.search(compiled_pattern, line)
+                if match:
+                    bitwidth_match = match.group(1)
+                    port_name_match = match.group(2)
+                    if self.check_if_commented(line, port_name_match):
+                        continue
                     port_line_list = port_name_match.split(',')
                     for each_port in port_line_list:
                         port_list.append(each_port.strip())
@@ -275,9 +288,9 @@ class AutoInstCommand(sublime_plugin.TextCommand):
             tag_handle = open(tag_file)
             module_file_handle = self.get_module_file_handle(
                 module_to_find, tag_handle, tag_file)
-            input_pattern = r'^\s*(?:\binput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
-            output_pattern = r'^\s*(?:\boutput\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
-            inout_pattern = r'^\s*(?:\binout\b)\s*(\[\S+\s*:\s*\S+\])*\s*((\w+\s*[,]*\s*)*)'
+            input_pattern = r'(?:\binput\b\s*(?:reg|wire)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
+            output_pattern = r'(?:\boutput\b\s*(?:reg|wire)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
+            inout_pattern = r'(?:\binout\b\s*(?:reg|wire)*\s*)(\[\S+\s*:\s*\S+\])*\s*(([,]*\s*\w+\s*)+)'
             insert_pattern = r"((?<=/\*\bautoinst\b\*/)[\d\D]*?(?=\);))"
             insert_mark = r"/*autoinst*/"
             input_bitwidth_list, input_name_list = self.get_list(
